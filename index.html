@@ -1,0 +1,433 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Wave Q4 2026 · Incomm</title>
+<meta name="description" content="Acompanhamento das visitas e materiais da Wave Q4 2026 — Incomm, execução Bfly Consultoria.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="d3.min.js"></script>
+<style>
+:root {
+  --bg: #f6f6fa; --panel: #ffffff; --fg: #1d1b3a; --muted: #5f5d7a; --line: #e2e1ec;
+  --navy: #2e2a72; --orange: #f39200; --ok: #1f8a5b; --bad: #c8382f; --warn: #d97a00; --pend: #b9b8cc;
+  --m1: #1f8a5b; --m2: #2e2a72; --m3: #8c89b8; --m4: #f39200; --m5: #c8382f;
+  --radius: 12px; --shadow: 0 1px 2px rgba(20,18,60,.06), 0 4px 16px rgba(20,18,60,.04);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #12111f; --panel: #1c1b2e; --fg: #ecebf5; --muted: #a3a1bd; --line: #2e2c47;
+    --navy: #8f8af0; --orange: #ffaa33; --ok: #3cc28a; --bad: #ef6a60; --warn: #ffaa33; --pend: #4a4866;
+    --m1: #3cc28a; --m2: #8f8af0; --m3: #5d5a8a; --m4: #ffaa33; --m5: #ef6a60;
+    --shadow: none;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #12111f; --panel: #1c1b2e; --fg: #ecebf5; --muted: #a3a1bd; --line: #2e2c47;
+  --navy: #8f8af0; --orange: #ffaa33; --ok: #3cc28a; --bad: #ef6a60; --warn: #ffaa33; --pend: #4a4866;
+  --m1: #3cc28a; --m2: #8f8af0; --m3: #5d5a8a; --m4: #ffaa33; --m5: #ef6a60;
+  --shadow: none;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--bg); color: var(--fg); font-family: Inter, system-ui, -apple-system, "Segoe UI", sans-serif; font-size: 15px; line-height: 1.5; -webkit-font-smoothing: antialiased; }
+.wrap { max-width: 1180px; margin: 0 auto; padding: 0 16px; }
+.top { background: var(--panel); border-bottom: 1px solid var(--line); }
+.top .wrap { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; padding-top: 18px; padding-bottom: 18px; }
+.brand { display: flex; align-items: center; gap: 18px; min-width: 0; }
+.brand img { height: 52px; width: auto; flex: none; }
+:root[data-theme="dark"] .brand img { background: #fff; border-radius: 8px; padding: 4px 6px; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .brand img { background: #fff; border-radius: 8px; padding: 4px 6px; } }
+.brand h1 { font-size: 1.35rem; font-weight: 700; margin: 0; letter-spacing: -.01em; }
+.brand p { margin: 2px 0 0; color: var(--muted); font-size: .88rem; }
+.upd { text-align: right; font-size: .88rem; color: var(--muted); }
+.upd b { color: var(--fg); font-variant-numeric: tabular-nums; }
+main { padding: 28px 0 48px; display: flex; flex-direction: column; gap: 32px; }
+.lead { font-size: 1.2rem; line-height: 1.5; margin: 0; max-width: 56em; }
+.lead b { color: var(--navy); }
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); padding: 18px; min-width: 0; }
+.tile { border-top: 4px solid var(--c, var(--navy)); }
+.tile .l { color: var(--muted); font-size: .82rem; font-weight: 500; }
+.tile .v { font-size: 2rem; font-weight: 700; font-variant-numeric: tabular-nums; margin-top: 4px; letter-spacing: -.02em; }
+.tile .f { color: var(--muted); font-size: .8rem; margin-top: 2px; font-variant-numeric: tabular-nums; }
+.c-ok { --c: var(--ok); } .c-bad { --c: var(--bad); } .c-warn { --c: var(--warn); } .c-navy { --c: var(--navy); } .c-orange { --c: var(--orange); }
+h2 { font-size: 1.15rem; font-weight: 600; margin: 0 0 4px; }
+.note { color: var(--muted); font-size: .86rem; margin: 0 0 12px; }
+.grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 380px), 1fr)); gap: 24px; }
+.legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: .82rem; color: var(--muted); margin-bottom: 8px; }
+.sw { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
+.chart { position: relative; width: 100%; }
+.chart svg { display: block; overflow: visible; }
+.chart text { fill: var(--fg); font-family: inherit; }
+.chart .axis text { fill: var(--muted); font-size: 11px; }
+.chart .axis line, .chart .axis path { stroke: var(--line); }
+.tip { position: absolute; pointer-events: none; background: var(--fg); color: var(--bg); font-size: .8rem; padding: 8px 10px; border-radius: 8px; white-space: nowrap; z-index: 5; box-shadow: 0 4px 16px rgba(0,0,0,.18); }
+.tip .t { font-weight: 600; margin-bottom: 2px; }
+.tablewrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+table { width: 100%; border-collapse: collapse; font-size: .88rem; font-variant-numeric: tabular-nums; }
+th, td { padding: 9px 10px; border-bottom: 1px solid var(--line); text-align: right; white-space: nowrap; }
+th { color: var(--muted); font-weight: 600; font-size: .78rem; text-transform: uppercase; letter-spacing: .03em; }
+th.l, td.l { text-align: left; }
+tbody tr:hover { background: color-mix(in srgb, var(--navy) 5%, transparent); }
+td.up { color: var(--ok); font-weight: 600; } td.down { color: var(--bad); font-weight: 600; } td.att { color: var(--warn); }
+.pill { display: inline-block; padding: 2px 9px; border-radius: 999px; font-size: .78rem; font-weight: 500; background: color-mix(in srgb, var(--pc) 14%, transparent); color: var(--pc); }
+.tools { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 12px; }
+.tools input, .tools select { font: inherit; font-size: .9rem; padding: 9px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); color: var(--fg); }
+.tools input { flex: 1 1 260px; min-width: 0; }
+.tools select { flex: 0 1 auto; max-width: 100%; }
+.count { color: var(--muted); font-size: .85rem; margin-left: auto; }
+.pager { display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 12px; font-size: .85rem; color: var(--muted); }
+.pager button { font: inherit; padding: 6px 14px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); color: var(--fg); cursor: pointer; }
+.pager button:disabled { opacity: .45; cursor: default; }
+.concl { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr)); gap: 12px; }
+.call { border-left: 4px solid var(--c); }
+.call .tag { font-size: .75rem; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: var(--c); }
+.call p { margin: 6px 0 0; }
+details.foot { color: var(--muted); font-size: .86rem; }
+details.foot summary { cursor: pointer; font-weight: 500; color: var(--fg); }
+footer { border-top: 1px solid var(--line); color: var(--muted); font-size: .8rem; padding: 18px 0 28px; }
+.err { background: color-mix(in srgb, var(--bad) 10%, var(--panel)); border: 1px solid var(--bad); color: var(--fg); padding: 14px 16px; border-radius: var(--radius); }
+@media (max-width: 640px) {
+  .upd { text-align: left; }
+  .brand img { height: 40px; }
+  .brand h1 { font-size: 1.12rem; }
+  .lead { font-size: 1.05rem; }
+  .tile .v { font-size: 1.6rem; }
+  .count { margin-left: 0; }
+}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <div class="brand">
+      <img src="logo.png" alt="Bfly Consultoria">
+      <div>
+        <h1>Wave Q4 2026 · Acompanhamento Incomm</h1>
+        <p>Execução Bfly Consultoria · Novembro e dezembro de 2026</p>
+      </div>
+    </div>
+    <div class="upd">Última atualização: <b id="ultima">—</b><br>Dados atualizados diariamente às 16h (Brasília)</div>
+  </div>
+</header>
+
+<main class="wrap" id="conteudo">
+  <p class="lead" id="lead">Carregando dados…</p>
+
+  <section class="tiles" id="indicadores"></section>
+
+  <section>
+    <h2>Status das visitas por varejo</h2>
+    <p class="note">PDVs por status de visita em cada rede. Na tabela, o % visitado fica em verde acima da média geral e em vermelho abaixo.</p>
+    <div class="card">
+      <div class="legend"><span><i class="sw" style="background:var(--ok)"></i>Visitado</span><span><i class="sw" style="background:var(--bad)"></i>Não realizada</span><span><i class="sw" style="background:var(--pend)"></i>Pendente</span></div>
+      <div class="chart" id="g-varejo"></div>
+      <div class="tablewrap" style="margin-top:12px">
+        <table id="t-varejo"><thead><tr><th class="l">Varejo</th><th>PDVs</th><th>Visitados</th><th>Não realizada</th><th>Pendentes</th><th>% visitado</th><th>Materiais entregues</th><th>Promotor em contratação</th></tr></thead><tbody></tbody></table>
+      </div>
+    </div>
+  </section>
+
+  <div class="grid2">
+    <section>
+      <h2>Status dos materiais</h2>
+      <p class="note">Situação logística dos materiais em todos os PDVs.</p>
+      <div class="card"><div class="chart" id="g-materiais"></div></div>
+    </section>
+    <section>
+      <h2>Evolução da Wave</h2>
+      <p class="note">PDVs visitados e com materiais entregues, a cada atualização diária.</p>
+      <div class="card">
+        <div class="legend"><span><i class="sw" style="background:var(--ok)"></i>Visitados</span><span><i class="sw" style="background:var(--navy)"></i>Materiais entregues</span></div>
+        <div class="chart" id="g-evolucao"></div>
+      </div>
+    </section>
+  </div>
+
+  <section>
+    <h2>Andamento por estado</h2>
+    <p class="note">Ordenado pela quantidade de PDVs. % visitado em verde acima da média geral e em vermelho abaixo.</p>
+    <div class="card tablewrap">
+      <table id="t-uf"><thead><tr><th class="l">UF</th><th>PDVs</th><th>Visitados</th><th>Não realizada</th><th>Pendentes</th><th>% visitado</th><th>Materiais entregues</th><th>Promotor em contratação</th></tr></thead><tbody></tbody></table>
+    </div>
+  </section>
+
+  <section>
+    <h2>Consulta de PDVs</h2>
+    <p class="note">Busque por código da loja, cidade, UF, varejo ou status.</p>
+    <div class="card">
+      <div class="tools">
+        <input id="busca" type="search" placeholder="Ex.: Manacapuru, AM, Pague Menos…" aria-label="Buscar PDV">
+        <select id="f-varejo" aria-label="Varejo"><option value="">Todos os varejos</option></select>
+        <select id="f-visita" aria-label="Status da visita"><option value="">Todos os status de visita</option><option value="Sim">Visitado</option><option value="Não">Não realizada</option><option value="Pendente">Pendente</option></select>
+        <select id="f-mat" aria-label="Status dos materiais"><option value="">Todos os status de materiais</option></select>
+        <span class="count" id="contagem">—</span>
+      </div>
+      <div class="tablewrap">
+        <table id="t-pdvs"><thead><tr><th class="l">Código da loja</th><th class="l">Varejo</th><th class="l">Cidade</th><th class="l">UF</th><th class="l">Visita</th><th class="l">Materiais</th><th class="l">Promotor</th></tr></thead><tbody></tbody></table>
+      </div>
+      <div class="pager"><button id="pg-prev" type="button">‹ Anterior</button><span id="pg-info">—</span><button id="pg-next" type="button">Próxima ›</button></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Principais conclusões</h2>
+    <div class="concl" id="conclusoes"></div>
+  </section>
+
+  <details class="foot">
+    <summary>Como ler esta página</summary>
+    <p><b>Visitados</b>: PDVs com “Sim” na coluna de visitas da planilha oficial da Wave. <b>Visita não realizada</b>: “Não”. <b>Pendentes</b>: ainda sem visita. <b>Promotor em contratação</b>: PDVs em regiões onde o promotor ainda está sendo contratado. Os dados vêm da planilha oficial da Wave Q4 2026, mantida pela Bfly Consultoria, e são publicados aqui todos os dias às 16h (horário de Brasília).</p>
+  </details>
+</main>
+
+<footer><div class="wrap">Bfly Consultoria · Wave Q4 2026 para Incomm</div></footer>
+
+<script id="dados-embutidos" type="application/json">/*__DADOS__*/null</script>
+<script>
+(function () {
+  'use strict';
+  const L = d3.formatLocale({ decimal: ',', thousands: '.', grouping: [3], currency: ['R$ ', ''] });
+  const N = L.format(',d');
+  const P = (v) => L.format('.1f')(v) + '%';
+  const $ = (s) => document.querySelector(s);
+  const el = (tag, attrs, text) => { const e = document.createElement(tag); if (attrs) for (const k in attrs) e.setAttribute(k, attrs[k]); if (text != null) e.textContent = text; return e; };
+  const pct = (a, b) => b ? Math.round(1000 * a / b) / 10 : 0;
+
+  const MAT_ORDER = ['Entregue', 'Em trânsito', 'Aguardando atualização da Incomm', 'Aguardando retirada', 'Ocorrência operacional'];
+  const MAT_COLOR = { 'Entregue': 'var(--m1)', 'Em trânsito': 'var(--m2)', 'Aguardando atualização da Incomm': 'var(--m3)', 'Aguardando retirada': 'var(--m4)', 'Ocorrência operacional': 'var(--m5)' };
+  const VIS_LABEL = { 'Sim': 'Visitado', 'Não': 'Não realizada', 'Pendente': 'Pendente' };
+  const VIS_COLOR = { 'Sim': 'var(--ok)', 'Não': 'var(--bad)', 'Pendente': 'var(--muted)' };
+
+  async function carregar() {
+    try {
+      const emb = JSON.parse(document.getElementById('dados-embutidos').textContent);
+      if (emb && emb.pdvs) return emb;
+    } catch (e) { /* sem dados embutidos */ }
+    const v = Date.now();
+    const [p, h] = await Promise.all([
+      fetch('dados/pdvs.json?v=' + v, { cache: 'no-store' }).then((r) => { if (!r.ok) throw new Error('pdvs ' + r.status); return r.json(); }),
+      fetch('dados/historico.json?v=' + v, { cache: 'no-store' }).then((r) => { if (!r.ok) throw new Error('historico ' + r.status); return r.json(); })
+    ]);
+    return { pdvs: p.rows || p, historico: h.rows || h };
+  }
+
+  function agrupar(rows, key) {
+    const g = new Map();
+    for (const r of rows) {
+      const k = r[key] || '—';
+      let o = g.get(k);
+      if (!o) { o = { k, total: 0, sim: 0, nao: 0, pendente: 0, entregue: 0, contratacao: 0 }; g.set(k, o); }
+      o.total++;
+      if (r.visitado === 'Sim') o.sim++; else if (r.visitado === 'Não') o.nao++; else if (r.visitado === 'Pendente') o.pendente++;
+      if (r.materiais === 'Entregue') o.entregue++;
+      if (r.promotor === 'Em contratação') o.contratacao++;
+    }
+    return [...g.values()].map((o) => ({ ...o, pct: pct(o.sim, o.total) })).sort((a, b) => b.total - a.total);
+  }
+
+  function fmtData(s) {
+    const m = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/.exec(s || '');
+    return m ? `${m[3]}/${m[2]}/${m[1]} às ${m[4]}:${m[5]}` : (s || '—');
+  }
+
+  // ---- tooltip
+  function tipFor(box) {
+    let t = box.querySelector('.tip');
+    if (!t) { t = el('div', { class: 'tip' }); t.hidden = true; box.appendChild(t); }
+    return t;
+  }
+  function showTip(box, ev, title, lines) {
+    const t = tipFor(box);
+    t.replaceChildren(el('div', { class: 't' }, title), ...lines.map((l) => el('div', null, l)));
+    t.hidden = false;
+    const b = box.getBoundingClientRect();
+    const cx = (ev.touches ? ev.touches[0].clientX : ev.clientX), cy = (ev.touches ? ev.touches[0].clientY : ev.clientY);
+    let x = cx - b.left + 12, y = cy - b.top + 12;
+    if (x + t.offsetWidth > b.width) x = Math.max(0, cx - b.left - t.offsetWidth - 12);
+    t.style.left = x + 'px'; t.style.top = y + 'px';
+  }
+  const hideTip = (box) => { const t = box.querySelector('.tip'); if (t) t.hidden = true; };
+
+  // ---- charts
+  function chartVarejo(box, rows) {
+    const W = box.clientWidth || 600, bh = 30, gap = 16, lw = Math.min(130, W * 0.3), rw = 54;
+    const H = rows.length * (bh + gap);
+    box.replaceChildren();
+    const svg = d3.select(box).append('svg').attr('width', W).attr('height', H).attr('role', 'img').attr('aria-label', 'Status das visitas por varejo');
+    const x = d3.scaleLinear().domain([0, 1]).range([lw, W - rw]);
+    const keys = [['sim', 'Visitado', 'var(--ok)'], ['nao', 'Não realizada', 'var(--bad)'], ['pendente', 'Pendente', 'var(--pend)']];
+    rows.forEach((r, i) => {
+      const y = i * (bh + gap);
+      const g = svg.append('g');
+      g.append('text').attr('x', lw - 10).attr('y', y + bh / 2).attr('dy', '.35em').attr('text-anchor', 'end').attr('font-size', 13).attr('font-weight', 500).text(r.k);
+      let acc = 0;
+      for (const [k, lab, col] of keys) {
+        const v = r[k] / r.total;
+        if (r[k] > 0) {
+          g.append('rect').attr('x', x(acc)).attr('y', y).attr('width', Math.max(1.5, x(acc + v) - x(acc))).attr('height', bh).attr('fill', col).attr('rx', 2)
+            .on('mousemove touchstart', (ev) => showTip(box, ev, r.k, [`${lab}: ${N(r[k])} PDVs (${P(pct(r[k], r.total))})`, `Total: ${N(r.total)} PDVs`]))
+            .on('mouseleave touchend', () => hideTip(box));
+        }
+        acc += v;
+      }
+      g.append('text').attr('x', W - rw + 8).attr('y', y + bh / 2).attr('dy', '.35em').attr('font-size', 12).attr('font-weight', 600).attr('fill', 'var(--ok)').text(P(r.pct));
+    });
+  }
+
+  function chartMateriais(box, rows, total) {
+    const W = box.clientWidth || 400, bh = 22, gap = 30;
+    const H = rows.length * (bh + gap);
+    box.replaceChildren();
+    const svg = d3.select(box).append('svg').attr('width', W).attr('height', H).attr('role', 'img').attr('aria-label', 'Status dos materiais');
+    const max = d3.max(rows, (d) => d.qtd) || 1;
+    const x = d3.scaleLinear().domain([0, max]).range([0, W - 110]);
+    rows.forEach((r, i) => {
+      const y = i * (bh + gap);
+      svg.append('text').attr('x', 0).attr('y', y + 4).attr('font-size', 12.5).attr('font-weight', 500).text(r.status);
+      svg.append('rect').attr('x', 0).attr('y', y + 12).attr('width', Math.max(2, x(r.qtd))).attr('height', bh).attr('rx', 3).attr('fill', MAT_COLOR[r.status] || 'var(--m3)')
+        .on('mousemove touchstart', (ev) => showTip(box, ev, r.status, [`${N(r.qtd)} PDVs`, `${P(r.pct)} do total de ${N(total)}`]))
+        .on('mouseleave touchend', () => hideTip(box));
+      svg.append('text').attr('x', Math.max(2, x(r.qtd)) + 8).attr('y', y + 12 + bh / 2).attr('dy', '.35em').attr('font-size', 12.5).attr('font-weight', 600).text(`${N(r.qtd)}`)
+        .append('tspan').attr('fill', 'var(--muted)').attr('font-weight', 400).text(`  ${P(r.pct)}`);
+    });
+  }
+
+  function chartEvolucao(box, hist) {
+    const W = box.clientWidth || 400, H = 240, m = { t: 16, r: 56, b: 28, l: 44 };
+    box.replaceChildren();
+    const rows = hist.map((h) => ({ d: new Date(h.data + 'T12:00:00'), data: h.data, sim: +h.visitados_sim || 0, ent: +h.mat_entregue || 0 })).sort((a, b) => a.d - b.d);
+    const svg = d3.select(box).append('svg').attr('width', W).attr('height', H).attr('role', 'img').attr('aria-label', 'Evolução diária');
+    let x0 = rows[0].d, x1 = rows[rows.length - 1].d;
+    if (+x0 === +x1) { x0 = d3.timeDay.offset(x0, -3); x1 = d3.timeDay.offset(x1, 3); }
+    const x = d3.scaleTime().domain([x0, x1]).range([m.l, W - m.r]);
+    const y = d3.scaleLinear().domain([0, d3.max(rows, (r) => Math.max(r.sim, r.ent)) * 1.15 || 10]).nice().range([H - m.b, m.t]);
+    const fd = d3.timeFormat('%d/%m');
+    svg.append('g').attr('class', 'axis').attr('transform', `translate(0,${H - m.b})`).call(d3.axisBottom(x).ticks(Math.min(6, Math.max(2, rows.length))).tickFormat(fd).tickSizeOuter(0));
+    svg.append('g').attr('class', 'axis').attr('transform', `translate(${m.l},0)`).call(d3.axisLeft(y).ticks(5).tickFormat(N).tickSize(-(W - m.l - m.r))).call((g) => g.select('.domain').remove()).call((g) => g.selectAll('line').attr('stroke-opacity', .6));
+    const series = [['sim', 'Visitados', 'var(--ok)'], ['ent', 'Materiais entregues', 'var(--navy)']];
+    for (const [k, lab, col] of series) {
+      if (rows.length > 1) svg.append('path').datum(rows).attr('fill', 'none').attr('stroke', col).attr('stroke-width', 2.5).attr('d', d3.line().x((r) => x(r.d)).y((r) => y(r[k])));
+      svg.selectAll(null).data(rows).enter().append('circle').attr('cx', (r) => x(r.d)).attr('cy', (r) => y(r[k])).attr('r', 4.5).attr('fill', col);
+      const last = rows[rows.length - 1];
+      svg.append('text').attr('x', x(last.d) + 9).attr('y', y(last[k])).attr('dy', '.35em').attr('font-size', 12).attr('font-weight', 600).attr('fill', col).text(N(last[k]));
+    }
+    const bw = (W - m.l - m.r) / Math.max(1, rows.length);
+    svg.selectAll(null).data(rows).enter().append('rect').attr('x', (r) => x(r.d) - bw / 2).attr('y', m.t).attr('width', bw).attr('height', H - m.t - m.b).attr('fill', 'transparent')
+      .on('mousemove touchstart', (ev, r) => showTip(box, ev, fd(r.d), [`Visitados: ${N(r.sim)}`, `Materiais entregues: ${N(r.ent)}`]))
+      .on('mouseleave touchend', () => hideTip(box));
+    if (rows.length === 1) svg.append('text').attr('x', (m.l + W - m.r) / 2).attr('y', m.t + 4).attr('text-anchor', 'middle').attr('font-size', 11.5).attr('fill', 'var(--muted)').text('A linha cresce a cada atualização diária');
+  }
+
+  // ---- tables
+  function tabelaResumo(tb, rows, media) {
+    tb.replaceChildren(...rows.map((r) => {
+      const tr = el('tr');
+      tr.append(el('td', { class: 'l' }, r.k), el('td', null, N(r.total)), el('td', null, N(r.sim)), el('td', null, N(r.nao)),
+        el('td', { class: r.pendente ? 'att' : '' }, N(r.pendente)), el('td', { class: r.pct >= media ? 'up' : 'down' }, P(r.pct)),
+        el('td', null, N(r.entregue)), el('td', { class: r.contratacao ? 'att' : '' }, N(r.contratacao)));
+      return tr;
+    }));
+  }
+
+  function pill(text, color) { const s = el('span', { class: 'pill' }, text); s.style.setProperty('--pc', color); return s; }
+
+  function render(dados) {
+    const pdvs = dados.pdvs, hist = dados.historico || [];
+    const tot = agrupar(pdvs, '__todos__')[0] || { total: 0, sim: 0, nao: 0, pendente: 0, entregue: 0, contratacao: 0, pct: 0 };
+    const pctEnt = pct(tot.entregue, tot.total);
+    const ult = hist.length ? hist.slice().sort((a, b) => a.atualizado_em < b.atualizado_em ? -1 : 1).pop().atualizado_em : null;
+    $('#ultima').textContent = fmtData(ult);
+
+    const lead = $('#lead'); lead.replaceChildren();
+    const b = (t) => el('b', null, t);
+    lead.append(b(P(tot.pct)), ' dos ', b(N(tot.total)), ' PDVs da Wave já foram visitados. ', b(N(tot.pendente)), ' visitas seguem pendentes e ', b(N(tot.entregue)), ' PDVs já receberam os materiais.');
+
+    const tiles = [
+      ['c-navy', 'PDVs na Wave', N(tot.total), 'Escopo oficial'],
+      ['c-ok', 'Visitados', N(tot.sim), P(tot.pct) + ' do total'],
+      ['c-bad', 'Visita não realizada', N(tot.nao), P(pct(tot.nao, tot.total)) + ' do total'],
+      ['c-warn', 'Pendentes', N(tot.pendente), 'Aguardando visita'],
+      ['c-orange', 'Materiais entregues', N(tot.entregue), P(pctEnt) + ' dos PDVs'],
+      ['c-warn', 'Promotor em contratação', N(tot.contratacao), 'PDVs aguardando promotor']
+    ];
+    $('#indicadores').replaceChildren(...tiles.map(([c, l, v, f]) => { const d = el('div', { class: 'card tile ' + c }); d.append(el('div', { class: 'l' }, l), el('div', { class: 'v' }, v), el('div', { class: 'f' }, f)); return d; }));
+
+    const porVarejo = agrupar(pdvs, 'varejo');
+    const porUf = agrupar(pdvs, 'uf');
+    tabelaResumo($('#t-varejo tbody'), porVarejo, tot.pct);
+    tabelaResumo($('#t-uf tbody'), porUf, tot.pct);
+
+    const mc = new Map(); for (const r of pdvs) mc.set(r.materiais, (mc.get(r.materiais) || 0) + 1);
+    const mats = [...mc].map(([status, qtd]) => ({ status, qtd, pct: pct(qtd, pdvs.length) }))
+      .sort((a, b) => (MAT_ORDER.indexOf(a.status) + 1 || 99) - (MAT_ORDER.indexOf(b.status) + 1 || 99));
+
+    const draw = () => {
+      chartVarejo($('#g-varejo'), porVarejo);
+      chartMateriais($('#g-materiais'), mats, pdvs.length);
+      if (hist.length) chartEvolucao($('#g-evolucao'), hist); else $('#g-evolucao').replaceChildren(el('p', { class: 'note' }, 'Sem histórico ainda.'));
+    };
+    draw();
+    let rz; let lastW = window.innerWidth;
+    window.addEventListener('resize', () => { if (window.innerWidth === lastW) return; lastW = window.innerWidth; clearTimeout(rz); rz = setTimeout(draw, 150); });
+
+    // conclusões
+    const vs = porVarejo.slice().sort((a, b) => b.pct - a.pct);
+    const ufp = porUf.slice().sort((a, b) => b.pendente - a.pendente)[0];
+    const ocorr = mc.get('Ocorrência operacional') || 0;
+    const calls = [
+      ['c-ok', 'Avanço', [b(P(tot.pct)), ' dos PDVs já foram visitados. Melhor desempenho: ', b(vs[0].k), ', com ', b(P(vs[0].pct)), ' visitado.']],
+      ['c-warn', 'Atenção', [b(N(tot.pendente)), ' visitas seguem pendentes. A UF com mais pendências é ', b(ufp.k), ' (', b(N(ufp.pendente)), ' PDVs), e ', b(N(tot.contratacao)), ' PDVs dependem de promotor em contratação.']],
+      ['c-bad', 'Ponto crítico', [b(N(tot.nao)), ' visitas não foram realizadas. O varejo mais atrasado é ', b(vs[vs.length - 1].k), ', com ', b(P(vs[vs.length - 1].pct)), ' visitado.']],
+      ['c-orange', 'Materiais', [b(P(pctEnt)), ' dos PDVs já receberam os materiais. ', b(N(ocorr)), ' PDVs estão com ocorrência operacional.']]
+    ];
+    $('#conclusoes').replaceChildren(...calls.map(([c, tag, parts]) => { const d = el('div', { class: 'card call ' + c }); const p = el('p'); p.append(...parts); d.append(el('div', { class: 'tag' }, tag), p); return d; }));
+
+    // lista de PDVs
+    const fv = $('#f-varejo'); porVarejo.forEach((r) => fv.append(el('option', { value: r.k }, r.k)));
+    const fm = $('#f-mat'); mats.forEach((r) => fm.append(el('option', { value: r.status }, r.status)));
+    const norm = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+    const idx = pdvs.map((r) => norm([r.codigo_loja, r.varejo, r.bandeira, r.cidade, r.uf, r.visitado, VIS_LABEL[r.visitado], r.materiais, r.promotor].join(' ')));
+    const PAGE = window.innerWidth < 640 ? 20 : 50; let page = 0; let filtrados = pdvs;
+    function filtrar() {
+      const q = norm($('#busca').value).split(/\s+/).filter(Boolean);
+      const v = fv.value, vis = $('#f-visita').value, mat = fm.value;
+      filtrados = pdvs.filter((r, i) => (!v || r.varejo === v) && (!vis || r.visitado === vis) && (!mat || r.materiais === mat) && q.every((t) => idx[i].includes(t)));
+      page = 0; lista();
+    }
+    function lista() {
+      const pages = Math.max(1, Math.ceil(filtrados.length / PAGE));
+      page = Math.min(page, pages - 1);
+      const slice = filtrados.slice(page * PAGE, page * PAGE + PAGE);
+      $('#t-pdvs tbody').replaceChildren(...slice.map((r) => {
+        const tr = el('tr');
+        const tdV = el('td', { class: 'l' }); tdV.append(pill(VIS_LABEL[r.visitado] || r.visitado, VIS_COLOR[r.visitado] || 'var(--muted)'));
+        const tdM = el('td', { class: 'l' }); tdM.append(pill(r.materiais, MAT_COLOR[r.materiais] || 'var(--muted)'));
+        const tdP = el('td', { class: 'l' }); tdP.append(pill(r.promotor, r.promotor === 'Alocado' ? 'var(--ok)' : 'var(--warn)'));
+        tr.append(el('td', { class: 'l' }, r.codigo_loja), el('td', { class: 'l' }, r.varejo), el('td', { class: 'l' }, r.cidade), el('td', { class: 'l' }, r.uf), tdV, tdM, tdP);
+        return tr;
+      }));
+      if (!slice.length) { const tr = el('tr'); tr.append(el('td', { class: 'l', colspan: '7' }, 'Nenhum PDV encontrado.')); $('#t-pdvs tbody').append(tr); }
+      $('#contagem').textContent = `${N(filtrados.length)} de ${N(pdvs.length)} PDVs`;
+      $('#pg-info').textContent = `Página ${page + 1} de ${pages}`;
+      $('#pg-prev').disabled = page === 0; $('#pg-next').disabled = page >= pages - 1;
+    }
+    $('#busca').addEventListener('input', filtrar);
+    [fv, $('#f-visita'), fm].forEach((s) => s.addEventListener('change', filtrar));
+    $('#pg-prev').addEventListener('click', () => { page--; lista(); });
+    $('#pg-next').addEventListener('click', () => { page++; lista(); });
+    lista();
+  }
+
+  carregar().then(render).catch((e) => {
+    const box = el('div', { class: 'err' }, 'Não foi possível carregar os dados agora. Tente recarregar a página em alguns instantes.');
+    $('#lead').replaceWith(box);
+    console.error(e);
+  });
+})();
+</script>
+</body>
+</html>
