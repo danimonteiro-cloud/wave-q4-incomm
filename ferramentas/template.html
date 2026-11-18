@@ -79,6 +79,9 @@ td.up { color: var(--ok); font-weight: 600; } td.down { color: var(--bad); font-
 .tools input { flex: 1 1 260px; min-width: 0; }
 .tools select { flex: 0 1 auto; max-width: 100%; }
 .count { color: var(--muted); font-size: .85rem; margin-left: auto; }
+.btn-xls { font: inherit; font-size: .88rem; font-weight: 600; padding: 9px 14px; border-radius: 8px; border: 1px solid var(--ok); background: var(--ok); color: #fff; cursor: pointer; white-space: nowrap; }
+.btn-xls:hover { filter: brightness(1.08); }
+.btn-xls:disabled { opacity: .6; cursor: default; }
 .pager { display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 12px; font-size: .85rem; color: var(--muted); }
 .pager button { font: inherit; padding: 6px 14px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); color: var(--fg); cursor: pointer; }
 .pager button:disabled { opacity: .45; cursor: default; }
@@ -157,17 +160,18 @@ footer { border-top: 1px solid var(--line); color: var(--muted); font-size: .8re
 
   <section>
     <h2>Consulta de PDVs</h2>
-    <p class="note">Busque por código da loja, cidade, UF, varejo ou status.</p>
+    <p class="note">Busque por código da loja, CNPJ, cidade, UF, varejo ou status. O botão “Baixar Excel” exporta a lista com os filtros aplicados.</p>
     <div class="card">
       <div class="tools">
-        <input id="busca" type="search" placeholder="Ex.: Manacapuru, AM, Pague Menos…" aria-label="Buscar PDV">
+        <input id="busca" type="search" placeholder="Ex.: Manacapuru, AM, Pague Menos, CNPJ…" aria-label="Buscar PDV">
         <select id="f-varejo" aria-label="Varejo"><option value="">Todos os varejos</option></select>
         <select id="f-visita" aria-label="Status da visita"><option value="">Todos os status de visita</option><option value="Sim">Visitado</option><option value="Não">Não realizada</option><option value="Pendente">Pendente</option></select>
         <select id="f-mat" aria-label="Status dos materiais"><option value="">Todos os status de materiais</option></select>
         <span class="count" id="contagem">—</span>
+        <button type="button" class="btn-xls" id="baixar-excel">⬇ Baixar Excel (.xlsx)</button>
       </div>
       <div class="tablewrap">
-        <table id="t-pdvs"><thead><tr><th class="l">Código da loja</th><th class="l">Varejo</th><th class="l">Cidade</th><th class="l">UF</th><th class="l">Visita</th><th class="l">Materiais</th><th class="l">Promotor</th></tr></thead><tbody></tbody></table>
+        <table id="t-pdvs"><thead><tr><th class="l">Código da loja</th><th class="l">CNPJ</th><th class="l">Varejo</th><th class="l">Cidade</th><th class="l">UF</th><th class="l">Visita</th><th class="l">Materiais</th><th class="l">Promotor</th></tr></thead><tbody></tbody></table>
       </div>
       <div class="pager"><button id="pg-prev" type="button">‹ Anterior</button><span id="pg-info">—</span><button id="pg-next" type="button">Próxima ›</button></div>
     </div>
@@ -390,7 +394,7 @@ footer { border-top: 1px solid var(--line); color: var(--muted); font-size: .8re
     const fv = $('#f-varejo'); porVarejo.forEach((r) => fv.append(el('option', { value: r.k }, r.k)));
     const fm = $('#f-mat'); mats.forEach((r) => fm.append(el('option', { value: r.status }, r.status)));
     const norm = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
-    const idx = pdvs.map((r) => norm([r.codigo_loja, r.varejo, r.bandeira, r.cidade, r.uf, r.visitado, VIS_LABEL[r.visitado], r.materiais, r.promotor].join(' ')));
+    const idx = pdvs.map((r) => norm([r.codigo_loja, r.cnpj, String(r.cnpj || '').replace(/\D/g, ''), r.varejo, r.bandeira, r.cidade, r.uf, r.visitado, VIS_LABEL[r.visitado], r.materiais, r.promotor].join(' ')));
     const PAGE = window.innerWidth < 640 ? 20 : 50; let page = 0; let filtrados = pdvs;
     function filtrar() {
       const q = norm($('#busca').value).split(/\s+/).filter(Boolean);
@@ -407,10 +411,10 @@ footer { border-top: 1px solid var(--line); color: var(--muted); font-size: .8re
         const tdV = el('td', { class: 'l' }); tdV.append(pill(VIS_LABEL[r.visitado] || r.visitado, VIS_COLOR[r.visitado] || 'var(--muted)'));
         const tdM = el('td', { class: 'l' }); tdM.append(pill(r.materiais, MAT_COLOR[r.materiais] || 'var(--muted)'));
         const tdP = el('td', { class: 'l' }); tdP.append(pill(r.promotor, r.promotor === 'Alocado' ? 'var(--ok)' : 'var(--warn)'));
-        tr.append(el('td', { class: 'l' }, r.codigo_loja), el('td', { class: 'l' }, r.varejo), el('td', { class: 'l' }, r.cidade), el('td', { class: 'l' }, r.uf), tdV, tdM, tdP);
+        tr.append(el('td', { class: 'l' }, r.codigo_loja), el('td', { class: 'l' }, r.cnpj || '—'), el('td', { class: 'l' }, r.varejo), el('td', { class: 'l' }, r.cidade), el('td', { class: 'l' }, r.uf), tdV, tdM, tdP);
         return tr;
       }));
-      if (!slice.length) { const tr = el('tr'); tr.append(el('td', { class: 'l', colspan: '7' }, 'Nenhum PDV encontrado.')); $('#t-pdvs tbody').append(tr); }
+      if (!slice.length) { const tr = el('tr'); tr.append(el('td', { class: 'l', colspan: '8' }, 'Nenhum PDV encontrado.')); $('#t-pdvs tbody').append(tr); }
       $('#contagem').textContent = `${N(filtrados.length)} de ${N(pdvs.length)} PDVs`;
       $('#pg-info').textContent = `Página ${page + 1} de ${pages}`;
       $('#pg-prev').disabled = page === 0; $('#pg-next').disabled = page >= pages - 1;
@@ -419,6 +423,42 @@ footer { border-top: 1px solid var(--line); color: var(--muted); font-size: .8re
     [fv, $('#f-visita'), fm].forEach((s) => s.addEventListener('change', filtrar));
     $('#pg-prev').addEventListener('click', () => { page--; lista(); });
     $('#pg-next').addEventListener('click', () => { page++; lista(); });
+
+    // Exportar para Excel (.xlsx) a lista com os filtros aplicados
+    function carregarXlsx() {
+      if (window.XLSX) return Promise.resolve(window.XLSX);
+      return new Promise((ok, falha) => {
+        const sc = document.createElement('script');
+        sc.src = 'xlsx.mini.min.js';
+        sc.onload = () => window.XLSX ? ok(window.XLSX) : falha(new Error('xlsx'));
+        sc.onerror = () => falha(new Error('xlsx'));
+        document.head.appendChild(sc);
+      });
+    }
+    $('#baixar-excel').addEventListener('click', async () => {
+      const btn = $('#baixar-excel'); const txt = btn.textContent;
+      btn.disabled = true; btn.textContent = 'Gerando…';
+      try {
+        const X = await carregarXlsx();
+        const cab = ['Código da loja', 'CNPJ', 'Varejo', 'Bandeira', 'Cidade', 'UF', 'Status da visita', 'Status dos materiais', 'Promotor'];
+        const linhas = filtrados.map((r) => [r.codigo_loja || '', r.cnpj || '', r.varejo || '', r.bandeira || '', r.cidade || '', r.uf || '', VIS_LABEL[r.visitado] || r.visitado || '', r.materiais || '', r.promotor || '']);
+        const ws = X.utils.aoa_to_sheet([cab, ...linhas]);
+        // código e CNPJ como texto, para o Excel não alterar zeros à esquerda
+        for (let i = 1; i <= linhas.length; i++) for (const c of [0, 1]) { const ref = X.utils.encode_cell({ r: i, c }); if (ws[ref]) { ws[ref].t = 's'; ws[ref].z = '@'; } }
+        ws['!cols'] = [18, 20, 14, 26, 22, 5, 16, 32, 15].map((w) => ({ wch: w }));
+        ws['!autofilter'] = { ref: X.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: linhas.length, c: cab.length - 1 } }) };
+        const wb = X.utils.book_new();
+        X.utils.book_append_sheet(wb, ws, 'PDVs');
+        const info = X.utils.aoa_to_sheet([['Wave Q4 2026 · Acompanhamento Incomm'], ['Dados de', $('#ultima').textContent], ['PDVs exportados', linhas.length], ['Filtros', [fv.value, $('#f-visita').selectedOptions[0].textContent, fm.value, $('#busca').value].filter((t) => t && !/^Todos/.test(t)).join(' · ') || 'Nenhum']]);
+        info['!cols'] = [{ wch: 18 }, { wch: 60 }];
+        X.utils.book_append_sheet(wb, info, 'Sobre');
+        const d = new Date(); const pad = (n) => String(n).padStart(2, '0');
+        X.writeFile(wb, `Wave_Q4_PDVs_${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}.xlsx`);
+      } catch (e) {
+        alert('Não foi possível gerar o Excel agora. Tente novamente em instantes.');
+        console.error(e);
+      } finally { btn.disabled = false; btn.textContent = txt; }
+    });
     lista();
   }
 
