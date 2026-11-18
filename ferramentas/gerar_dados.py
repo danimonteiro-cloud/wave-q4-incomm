@@ -45,8 +45,13 @@ def status_promotor(v):
     s = (clean(v) or "").lower()
     return "Em contratação" if (not s or s.startswith("pendente")) else "Alocado"
 
+linhas = sheet("Wave Q4")
+for col in ("Código da Loja", "Promotor - Nome Completo", "PDVs Visitados", "STATUS DE MATERIAIS"):
+    if linhas and col not in linhas[0]:
+        raise SystemExit(f"Coluna não encontrada na aba Wave Q4: {col}")
+
 pdvs = []
-for r in sheet("Wave Q4"):
+for r in linhas:
     visit = clean(r.get("PDVs Visitados")) or "Sem informação"
     mat = clean(r.get("STATUS DE MATERIAIS")) or "Sem informação"
     pdvs.append({
