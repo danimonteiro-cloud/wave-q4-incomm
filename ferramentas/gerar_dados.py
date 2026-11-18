@@ -47,6 +47,7 @@ for r in sheet("Wave Q4"):
     mat = clean(r.get("STATUS DE MATERIAIS")) or "Sem informação"
     pdvs.append({
         "codigo_loja": clean(r.get("Código da Loja")),
+        "cnpj": clean(r.get("CNPJ")),
         "varejo": norm_varejo(r.get("Varejo")),
         "bandeira": clean(r.get("Bandeira")),
         "cidade": clean(r.get("Cidade")),
