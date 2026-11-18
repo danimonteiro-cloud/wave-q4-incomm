@@ -14,7 +14,7 @@ for name, rows in (("pdvs", pdvs), ("historico", hist)):
     json.dump({"rows": rows}, open(os.path.join(site, "dados", name + ".json"), "w", encoding="utf-8"), ensure_ascii=False)
 shutil.copy(logo_f, os.path.join(site, "logo.png"))
 shutil.copy(os.path.join(here, "d3.min.js"), os.path.join(site, "d3.min.js"))
-shutil.copy(os.path.join(here, "xlsx.mini.min.js"), os.path.join(site, "xlsx.mini.min.js"))
+shutil.copy(os.path.join(here, "exceljs.min.js"), os.path.join(site, "exceljs.min.js"))
 open(os.path.join(site, "index.html"), "w", encoding="utf-8").write(
     tpl.replace("__LOGO__", "logo.png").replace("<!--__D3__-->", '<script src="d3.min.js"></script>'))
 d3 = open(os.path.join(here, "d3.min.js"), encoding="utf-8").read().replace("</script", "<\\/script")
