@@ -38,8 +38,12 @@ def sheet(prefix):
             return [dict(zip(head, r)) for r in rows[1:] if any(c is not None for c in r)]
     raise SystemExit(f"Aba não encontrada: {prefix}")
 
-# PDVs cuja região ainda está com promotor em contratação (aba Regiões_Em_Contratação)
-em_contrat = {clean(r.get("Código da Loja")) for r in sheet("Regiões_Em_Contrata")}
+# Status do promotor pela coluna "Promotor - Nome Completo" (coluna N da aba Wave Q4):
+# nome preenchido = contratado ("Alocado"); "Pendente" ou vazio = "Em contratação".
+# O nome em si nunca vai para a saída.
+def status_promotor(v):
+    s = (clean(v) or "").lower()
+    return "Em contratação" if (not s or s.startswith("pendente")) else "Alocado"
 
 pdvs = []
 for r in sheet("Wave Q4"):
@@ -55,7 +59,7 @@ for r in sheet("Wave Q4"):
         "visitado": visit,
         "materiais": mat,
         "testeira_netflix": "Sim" if clean(r.get("Testeira Netflix")) else "Não",
-        "promotor": "Em contratação" if clean(r.get("Código da Loja")) in em_contrat else "Alocado",
+        "promotor": status_promotor(r.get("Promotor - Nome Completo")),
     })
 
 def count(key, val):
