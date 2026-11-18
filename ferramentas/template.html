@@ -424,36 +424,79 @@ footer { border-top: 1px solid var(--line); color: var(--muted); font-size: .8re
     $('#pg-prev').addEventListener('click', () => { page--; lista(); });
     $('#pg-next').addEventListener('click', () => { page++; lista(); });
 
-    // Exportar para Excel (.xlsx) a lista com os filtros aplicados
-    function carregarXlsx() {
-      if (window.XLSX) return Promise.resolve(window.XLSX);
+    // Exportar para Excel (.xlsx) a lista com os filtros aplicados, com o cabeçalho do site
+    function carregarExcelJS() {
+      if (window.ExcelJS) return Promise.resolve(window.ExcelJS);
       return new Promise((ok, falha) => {
         const sc = document.createElement('script');
-        sc.src = 'xlsx.mini.min.js';
-        sc.onload = () => window.XLSX ? ok(window.XLSX) : falha(new Error('xlsx'));
-        sc.onerror = () => falha(new Error('xlsx'));
+        sc.src = 'exceljs.min.js';
+        sc.onload = () => window.ExcelJS ? ok(window.ExcelJS) : falha(new Error('exceljs'));
+        sc.onerror = () => falha(new Error('exceljs'));
         document.head.appendChild(sc);
       });
+    }
+    function logoBase64() {
+      const img = document.querySelector('.brand img');
+      if (!img) return null;
+      if (img.src.startsWith('data:image/png;base64,')) return img.src.split(',')[1];
+      try {
+        const c = document.createElement('canvas'); c.width = img.naturalWidth; c.height = img.naturalHeight;
+        c.getContext('2d').drawImage(img, 0, 0);
+        return c.toDataURL('image/png').split(',')[1];
+      } catch (e) { return null; }
     }
     $('#baixar-excel').addEventListener('click', async () => {
       const btn = $('#baixar-excel'); const txt = btn.textContent;
       btn.disabled = true; btn.textContent = 'Gerando…';
       try {
-        const X = await carregarXlsx();
+        const EJ = await carregarExcelJS();
+        const NAVY = 'FF2E2A72', ORANGE = 'FFF39200', GREY = 'FF5F5D7A';
         const cab = ['Código da loja', 'CNPJ', 'Varejo', 'Bandeira', 'Cidade', 'UF', 'Status da visita', 'Status dos materiais', 'Promotor'];
-        const linhas = filtrados.map((r) => [r.codigo_loja || '', r.cnpj || '', r.varejo || '', r.bandeira || '', r.cidade || '', r.uf || '', VIS_LABEL[r.visitado] || r.visitado || '', r.materiais || '', r.promotor || '']);
-        const ws = X.utils.aoa_to_sheet([cab, ...linhas]);
-        // código e CNPJ como texto, para o Excel não alterar zeros à esquerda
-        for (let i = 1; i <= linhas.length; i++) for (const c of [0, 1]) { const ref = X.utils.encode_cell({ r: i, c }); if (ws[ref]) { ws[ref].t = 's'; ws[ref].z = '@'; } }
-        ws['!cols'] = [18, 20, 14, 26, 22, 5, 16, 32, 15].map((w) => ({ wch: w }));
-        ws['!autofilter'] = { ref: X.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: linhas.length, c: cab.length - 1 } }) };
-        const wb = X.utils.book_new();
-        X.utils.book_append_sheet(wb, ws, 'PDVs');
-        const info = X.utils.aoa_to_sheet([['Wave Q4 2026 · Acompanhamento Incomm'], ['Dados de', $('#ultima').textContent], ['PDVs exportados', linhas.length], ['Filtros', [fv.value, $('#f-visita').selectedOptions[0].textContent, fm.value, $('#busca').value].filter((t) => t && !/^Todos/.test(t)).join(' · ') || 'Nenhum']]);
-        info['!cols'] = [{ wch: 18 }, { wch: 60 }];
-        X.utils.book_append_sheet(wb, info, 'Sobre');
-        const d = new Date(); const pad = (n) => String(n).padStart(2, '0');
-        X.writeFile(wb, `Wave_Q4_PDVs_${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}.xlsx`);
+        const larg = [18, 21, 14, 44, 24, 6, 17, 34, 16];
+        const filtrosTxt = [fv.value, $('#f-visita').selectedOptions[0].textContent, fm.value, $('#busca').value ? 'Busca: ' + $('#busca').value : ''].filter((t) => t && !/^Todos/.test(t)).join(' · ') || 'Nenhum (todos os PDVs)';
+        const agora = new Date(); const pad = (n) => String(n).padStart(2, '0');
+        const exportado = `${pad(agora.getDate())}/${pad(agora.getMonth() + 1)}/${agora.getFullYear()} às ${pad(agora.getHours())}:${pad(agora.getMinutes())}`;
+
+        const wb = new EJ.Workbook();
+        wb.creator = 'Bfly Consultoria';
+        const ws = wb.addWorksheet('PDVs', { views: [{ state: 'frozen', ySplit: 7, showGridLines: false }] });
+        ws.columns = larg.map((w) => ({ width: w }));
+        ws.pageSetup = { orientation: 'landscape', paperSize: 9, fitToPage: true, fitToWidth: 1, fitToHeight: 0, printTitlesRow: '7:7', margins: { left: 0.4, right: 0.4, top: 0.5, bottom: 0.5, header: 0.2, footer: 0.2 } };
+
+        // Cabeçalho: logo (A1:B4) e textos (C1:I4)
+        ws.getRow(1).height = 24; ws.getRow(2).height = 18; ws.getRow(3).height = 18; ws.getRow(4).height = 18;
+        const b64 = logoBase64();
+        if (b64) {
+          const id = wb.addImage({ base64: b64, extension: 'png' });
+          ws.addImage(id, { tl: { col: 0.15, row: 0.2 }, ext: { width: 120, height: 80 } });
+        }
+        const linhaTxt = (r, texto, fonte) => { ws.mergeCells(r, 3, r, 9); const c = ws.getCell(r, 3); c.value = texto; c.font = fonte; c.alignment = { vertical: 'middle' }; };
+        linhaTxt(1, 'Wave Q4 2026 · Acompanhamento Incomm', { name: 'Calibri', size: 16, bold: true, color: { argb: NAVY } });
+        linhaTxt(2, 'Execução Bfly Consultoria · Consulta de PDVs', { name: 'Calibri', size: 11, color: { argb: GREY } });
+        linhaTxt(3, `Dados atualizados em ${$('#ultima').textContent}  ·  Exportado em ${exportado}`, { name: 'Calibri', size: 11, bold: true, color: { argb: 'FF1D1B3A' } });
+        linhaTxt(4, `Filtros: ${filtrosTxt}  ·  ${N(filtrados.length)} PDVs`, { name: 'Calibri', size: 10, color: { argb: GREY } });
+        // faixa laranja
+        for (let c = 1; c <= 9; c++) ws.getCell(5, c).border = { bottom: { style: 'medium', color: { argb: ORANGE } } };
+        ws.getRow(5).height = 8; ws.getRow(6).height = 8;
+
+        // Tabela a partir da linha 7
+        const hr = ws.getRow(7); hr.values = cab; hr.height = 22;
+        hr.eachCell((c) => { c.font = { bold: true, color: { argb: 'FFFFFFFF' } }; c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: NAVY } }; c.alignment = { vertical: 'middle' }; });
+        filtrados.forEach((r, i) => {
+          const row = ws.getRow(8 + i);
+          row.values = [r.codigo_loja || '', r.cnpj || '', r.varejo || '', r.bandeira || '', r.cidade || '', r.uf || '', VIS_LABEL[r.visitado] || r.visitado || '', r.materiais || '', r.promotor || ''];
+          row.getCell(1).numFmt = '@'; row.getCell(2).numFmt = '@';
+          if (i % 2) row.eachCell((c) => { c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF4F4F9' } }; });
+        });
+        ws.autoFilter = { from: { row: 7, column: 1 }, to: { row: 7 + filtrados.length, column: 9 } };
+
+        const buf = await wb.xlsx.writeBuffer();
+        const blob = new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `Wave_Q4_PDVs_${agora.getFullYear()}-${pad(agora.getMonth() + 1)}-${pad(agora.getDate())}.xlsx`;
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(() => URL.revokeObjectURL(a.href), 5000);
       } catch (e) {
         alert('Não foi possível gerar o Excel agora. Tente novamente em instantes.');
         console.error(e);
