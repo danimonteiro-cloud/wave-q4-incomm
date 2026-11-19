@@ -54,6 +54,9 @@ pdvs = []
 for r in linhas:
     visit = clean(r.get("PDVs Visitados")) or "Sem informação"
     mat = clean(r.get("STATUS DE MATERIAIS")) or "Sem informação"
+    # "Retirou/Retirado no correio" conta como entregue (pedido da Daniele, 19/11)
+    if "correio" in mat.lower() and mat.lower().startswith("retir"):
+        mat = "Entregue"
     pdvs.append({
         "codigo_loja": clean(r.get("Código da Loja")),
         "cnpj": clean(r.get("CNPJ")),
