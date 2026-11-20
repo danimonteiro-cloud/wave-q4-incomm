@@ -38,22 +38,54 @@ def sheet(prefix):
             return [dict(zip(head, r)) for r in rows[1:] if any(c is not None for c in r)]
     raise SystemExit(f"Aba não encontrada: {prefix}")
 
-# Status do promotor pela coluna "Promotor - Nome Completo" (coluna N da aba Wave Q4):
+# Status do promotor pela coluna P "Promotor - Nome Completo" da aba Wave Q4:
 # nome preenchido = contratado ("Alocado"); "Pendente" ou vazio = "Em contratação".
 # O nome em si nunca vai para a saída.
 def status_promotor(v):
     s = (clean(v) or "").lower()
     return "Em contratação" if (not s or s.startswith("pendente")) else "Alocado"
 
-linhas = sheet("Wave Q4")
-for col in ("Código da Loja", "Promotor - Nome Completo", "PDVs Visitados", "STATUS DE MATERIAIS"):
-    if linhas and col not in linhas[0]:
-        raise SystemExit(f"Coluna não encontrada na aba Wave Q4: {col}")
+# Colunas fixas da aba Wave Q4 (definidas pela Daniele em 20/11/2026), conferidas pelo título.
+# Se a planilha mudar de layout, o script para com erro em vez de ler a coluna errada.
+COLUNAS = {
+    "codigo": ("F", "Código da Loja"),
+    "promotor": ("P", "Promotor - Nome Completo"),
+    "visita": ("R", "PDVs Visitados"),
+    "materiais": ("T", "STATUS DE MATERIAIS"),
+}
+from openpyxl.utils import column_index_from_string
+
+def aba_principal():
+    for ws in wb.worksheets:
+        if ws.title.startswith("Wave Q4"):
+            rows = [r for r in ws.iter_rows(values_only=True)]
+            head = [clean(h) for h in rows[0]]
+            idx = {}
+            for chave, (letra, titulo) in COLUNAS.items():
+                i = column_index_from_string(letra) - 1
+                achado = head[i] if i < len(head) else None
+                if not achado or not achado.lower().startswith(titulo.lower()):
+                    raise SystemExit(f"Coluna {letra} deveria ser '{titulo}', mas é '{achado}'. Layout da planilha mudou.")
+                idx[chave] = i
+            out = []
+            for r in rows[1:]:
+                if not any(c is not None for c in r):
+                    continue
+                d = dict(zip(head, r))
+                d["_codigo"] = r[idx["codigo"]] if idx["codigo"] < len(r) else None
+                d["_promotor"] = r[idx["promotor"]] if idx["promotor"] < len(r) else None
+                d["_visita"] = r[idx["visita"]] if idx["visita"] < len(r) else None
+                d["_materiais"] = r[idx["materiais"]] if idx["materiais"] < len(r) else None
+                out.append(d)
+            return out
+    raise SystemExit("Aba não encontrada: Wave Q4")
+
+linhas = aba_principal()
 
 pdvs = []
 for r in linhas:
-    visit = clean(r.get("PDVs Visitados")) or "Sem informação"
-    mat = clean(r.get("STATUS DE MATERIAIS")) or "Sem informação"
+    visit = clean(r.get("_visita")) or "Sem informação"
+    mat = clean(r.get("_materiais")) or "Sem informação"
     # "Retirou/Retirado no correio" conta como entregue (pedido da Daniele, 19/11)
     if "correio" in mat.lower() and mat.lower().startswith("retir"):
         mat = "Entregue"
@@ -61,7 +93,7 @@ for r in linhas:
     if mat.lower() == "sim":
         mat = "Entregue"
     pdvs.append({
-        "codigo_loja": clean(r.get("Código da Loja")),
+        "codigo_loja": clean(r.get("_codigo")),
         "cnpj": clean(r.get("CNPJ")),
         "varejo": norm_varejo(r.get("Varejo")),
         "bandeira": clean(r.get("Bandeira")),
@@ -70,7 +102,7 @@ for r in linhas:
         "visitado": visit,
         "materiais": mat,
         "testeira_netflix": "Sim" if clean(r.get("Testeira Netflix")) else "Não",
-        "promotor": status_promotor(r.get("Promotor - Nome Completo")),
+        "promotor": status_promotor(r.get("_promotor")),
     })
 
 def count(key, val):
