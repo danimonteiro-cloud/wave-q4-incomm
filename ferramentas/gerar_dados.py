@@ -57,6 +57,9 @@ for r in linhas:
     # "Retirou/Retirado no correio" conta como entregue (pedido da Daniele, 19/11)
     if "correio" in mat.lower() and mat.lower().startswith("retir"):
         mat = "Entregue"
+    # "Sim" na coluna de materiais = material recebido pela loja (pedido da Daniele, 20/11)
+    if mat.lower() == "sim":
+        mat = "Entregue"
     pdvs.append({
         "codigo_loja": clean(r.get("Código da Loja")),
         "cnpj": clean(r.get("CNPJ")),
